@@ -16,6 +16,7 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+GRAY = (123, 123, 123)
 
 # ball
 ball_x = WIDTH / 2
@@ -30,6 +31,39 @@ PADDLE_SPEED = 9
 paddle_speed = 0
 paddle_left_x = 30
 paddle_left_y = 40
+
+
+class Paddle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.width = 10
+        self.height = 100
+        self.surface = pygame.surface.Surface((self.width, self.height))
+        self.surface.fill(WHITE)
+        self.rect = self.surface.get_rect()
+        self.speed = 8
+
+    def move(self, key_pressed):
+        if key_pressed[pygame.K_UP]:
+            self.rect.move_ip(0, self.speed * -1)
+        elif key_pressed[pygame.K_DOWN]:
+            self.rect.move_ip(0, self.speed)
+
+
+class Ball(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.width = 20
+        self.height = 20
+        self.radius = self.width / 2
+        self.surface = pygame.surface.Surface((self.width, self.height))
+        # self.surface.fill(GRAY)
+        self.rect = self.surface.get_rect()
+        pygame.draw.circle(self.surface, WHITE, self.rect.center, self.radius)
+        
+
+paddle_1 = Paddle()
+ball = Ball()
 
 running = True
 
@@ -49,6 +83,9 @@ while running:
                 paddle_speed = PADDLE_SPEED
         if e.type == pygame.KEYUP:
             paddle_speed = 0
+    
+    key_pressed = pygame.key.get_pressed()
+    paddle_1.move(key_pressed)
 
     # paddle movement
     paddle_left_y += paddle_speed
@@ -67,6 +104,9 @@ while running:
     # draw
     pygame.draw.circle(window, WHITE, (ball_x, ball_y), ball_radius)
     pygame.draw.rect(window, RED, pygame.Rect(paddle_left_x, paddle_left_y, paddle_width, paddle_height))
+
+    window.blit(paddle_1.surface, paddle_1.rect)
+    window.blit(ball.surface, (ball.rect.x + 300, ball.rect.y + 300))
 
     # update the screen
     pygame.display.update()
