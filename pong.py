@@ -4,10 +4,10 @@ import pygame
 # https://www.youtube.com/watch?v=tS8F7_X2qB0
 
 # init
-WIDTH, HEIGHT = 1000, 600
+SCREEN_WIDTH, SCREEN_HEIGHT = 1027, 768
 pygame.init()
 pygame.display.set_caption("pong")
-window = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 FPS = 60
 
@@ -18,35 +18,57 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (123, 123, 123)
 
-# ball
-ball_x = WIDTH / 2
-ball_y = HEIGHT / 2
-ball_radius = 10
-ball_speed = 6
-
-# paddle
-paddle_width = 10
-paddle_height = 100
-PADDLE_SPEED = 9
-paddle_speed = 0
-paddle_left_x = 30
-paddle_left_y = 40
-
-
-class Paddle(pygame.sprite.Sprite):
+# sprites
+class PaddleLeft(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.width = 10
-        self.height = 100
+        self.height = 120
         self.surface = pygame.surface.Surface((self.width, self.height))
         self.surface.fill(WHITE)
         self.rect = self.surface.get_rect()
+        self.rect.x = 20
+        self.rect.y = SCREEN_HEIGHT / 2 - self.height / 2
         self.speed = 8
 
     def move(self, key_pressed):
+        if self.rect.y < 0:
+            self.rect.y = 0
+            return
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
+            return
+        if key_pressed[pygame.K_w]:
+            print("w pressed")
+            self.rect.move_ip(0, self.speed * -1)
+        elif key_pressed[pygame.K_s]:
+            print("s pressed")
+            self.rect.move_ip(0, self.speed)
+
+class PaddleRight(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.width = 10
+        self.height = 120
+        self.surface = pygame.surface.Surface((self.width, self.height))
+        self.surface.fill(WHITE)
+        self.rect = self.surface.get_rect()
+        self.rect.x = SCREEN_WIDTH - self.width - 20
+        self.rect.y = SCREEN_HEIGHT / 2 - self.height / 2
+        self.speed = 8
+
+    def move(self, key_pressed):
+        if self.rect.y < 0:
+            self.rect.y = 0
+            return
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
+            return
         if key_pressed[pygame.K_UP]:
+            print("up pressed")
             self.rect.move_ip(0, self.speed * -1)
         elif key_pressed[pygame.K_DOWN]:
+            print("down pressed")
             self.rect.move_ip(0, self.speed)
 
 
@@ -56,57 +78,55 @@ class Ball(pygame.sprite.Sprite):
         self.width = 20
         self.height = 20
         self.radius = self.width / 2
+        self.SPEED = 8
+        self.speed_x = self.SPEED
+        self.speed_y = self.SPEED
         self.surface = pygame.surface.Surface((self.width, self.height))
         # self.surface.fill(GRAY)
         self.rect = self.surface.get_rect()
         pygame.draw.circle(self.surface, WHITE, self.rect.center, self.radius)
+
+    def move(self, paddles: pygame.sprite.Group):
+        if self.rect.x < 0 or self.rect.right > SCREEN_WIDTH:
+            self.speed_x = self.speed_x * -1
+        if self.rect.y < 0 or self.rect.bottom > SCREEN_HEIGHT:
+            self.speed_y = self.speed_y * -1
+        if pygame.sprite.spritecollideany(self, paddles):
+            self.speed_x = self.speed_x * -1
+        self.rect.move_ip(self.speed_x, self.speed_y)
         
 
-paddle_1 = Paddle()
+paddle_left = PaddleLeft()
+paddle_right = PaddleRight()
 ball = Ball()
+paddles = pygame.sprite.Group()
+paddles.add(paddle_left)
+paddles.add(paddle_right)
 
 running = True
 
 # main loop
 while running:
     # fill screen with BLACK
-    window.fill(BLACK)
+    screen.fill(BLACK)
+
+    # user input
+    key_pressed = pygame.key.get_pressed()
+    if key_pressed[pygame.K_s]:
+        print("s pressed")
+    paddle_left.move(key_pressed)
+    paddle_right.move(key_pressed)
+    ball.move(paddles)
 
     # events
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             running = False
-        if e.type == pygame.KEYDOWN:
-            if e.key == pygame.K_UP:
-                paddle_speed = PADDLE_SPEED * -1
-            elif e.key == pygame.K_DOWN:
-                paddle_speed = PADDLE_SPEED
-        if e.type == pygame.KEYUP:
-            paddle_speed = 0
-    
-    key_pressed = pygame.key.get_pressed()
-    paddle_1.move(key_pressed)
-
-    # paddle movement
-    paddle_left_y += paddle_speed
-    if paddle_left_y + paddle_height >= HEIGHT:
-        paddle_left_y = HEIGHT - paddle_height
-    if paddle_left_y <= 0:
-        paddle_left_y = 0
-    
-    # ball movement
-    if ball_x + ball_radius * 2 >= WIDTH or ball_x <= 0:
-        ball_speed = ball_speed * -1
-    if ball_x - ball_radius <= paddle_left_x + paddle_width and ball_y + ball_radius <= paddle_left_y + paddle_height and ball_y - ball_radius >= paddle_left_y:
-        ball_speed = ball_speed * -1
-    ball_x += ball_speed
     
     # draw
-    pygame.draw.circle(window, WHITE, (ball_x, ball_y), ball_radius)
-    pygame.draw.rect(window, RED, pygame.Rect(paddle_left_x, paddle_left_y, paddle_width, paddle_height))
-
-    window.blit(paddle_1.surface, paddle_1.rect)
-    window.blit(ball.surface, (ball.rect.x + 300, ball.rect.y + 300))
+    screen.blit(paddle_left.surface, paddle_left.rect)
+    screen.blit(paddle_right.surface, paddle_right.rect)
+    screen.blit(ball.surface, ball.rect)
 
     # update the screen
     pygame.display.update()
