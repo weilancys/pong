@@ -2,6 +2,7 @@ import pygame
 
 # https://realpython.com/pygame-a-primer/#collision-detection
 # https://www.youtube.com/watch?v=tS8F7_X2qB0
+# https://gamedev.stackexchange.com/questions/4253/in-pong-how-do-you-calculate-the-balls-direction-when-it-bounces-off-the-paddl
 
 # init
 SCREEN_WIDTH, SCREEN_HEIGHT = 1027, 768
@@ -82,6 +83,10 @@ paddle_left = Paddle(config=config_left)
 config_right = PaddleConfig(pygame.K_UP, pygame.K_DOWN, initial_x=SCREEN_WIDTH - 30 - 10, initial_y=SCREEN_HEIGHT // 2 - 60)
 paddle_right = Paddle(config=config_right)
 ball = Ball()
+all_sprites = pygame.sprite.Group()
+all_sprites.add(paddle_left)
+all_sprites.add(paddle_right)
+all_sprites.add(ball)
 paddles = pygame.sprite.Group()
 paddles.add(paddle_left)
 paddles.add(paddle_right)
