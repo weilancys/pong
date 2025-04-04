@@ -1,5 +1,6 @@
 import pygame
-from math import pi, sin, cos
+import random
+from math import pi, sin, cos, floor
 
 # init
 SCREEN_WIDTH, SCREEN_HEIGHT = 1027, 768
@@ -16,9 +17,14 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (123, 123, 123)
 
+# scoring
+score_left = 0
+score_right = 0
+font = pygame.font.Font(None, 36)
+
 # sprites
 class PaddleConfig:
-    def __init__(self, up_key, down_key, speed=8, width=10, height=120, initial_x=30, initial_y=10, color=WHITE):
+    def __init__(self, up_key, down_key, speed=8, width=15, height=120, initial_x=30, initial_y=10, color=WHITE):
         self.color = color
         self.width = width
         self.height = height
@@ -51,11 +57,14 @@ class Paddle(pygame.sprite.Sprite):
         elif key_pressed[self.config.down_key]:
             self.rect.move_ip(0, self.config.speed)
 
+    def reset(self):
+        self.rect.centery = SCREEN_HEIGHT / 2
+
 
 class Ball(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.width = 20
+        self.width = 10
         self.height = 20
         self.radius = self.width / 2
         self.SPEED = 12
@@ -67,8 +76,8 @@ class Ball(pygame.sprite.Sprite):
         pygame.draw.circle(self.surface, WHITE, self.rect.center, self.radius)
 
     def move(self, paddles: pygame.sprite.Group):
-        if self.rect.x < 0 or self.rect.right > SCREEN_WIDTH:
-            self.speed_x = self.speed_x * -1
+        # if self.rect.x < 0 or self.rect.right > SCREEN_WIDTH:
+        #     self.speed_x = self.speed_x * -1
         if self.rect.y < 0 or self.rect.bottom > SCREEN_HEIGHT:
             self.speed_y = self.speed_y * -1
         
@@ -85,6 +94,13 @@ class Ball(pygame.sprite.Sprite):
             self.speed_x = cos(radian) * self.SPEED * -1 if self.speed_x > 0 else cos(radian) * self.SPEED
             self.speed_y = sin(radian) * self.SPEED * -1 if self.speed_y < 0 else sin(radian) * self.SPEED
         self.rect.move_ip(self.speed_x, self.speed_y)
+
+    def reset(self):
+        self.rect.centerx = SCREEN_WIDTH / 2
+        self.rect.centery = SCREEN_HEIGHT / 2
+        radian = 60 * random.uniform(0.3, 1.0) * pi / 100
+        self.speed_x = cos(radian) * self.SPEED * -1 if floor(random.random() * 10) % 2 == 0 else cos(radian) * self.SPEED
+        self.speed_y = sin(radian) * self.SPEED * -1 if floor(random.random() * 10) % 2 == 0 else sin(radian) * self.SPEED
         
 config_left = PaddleConfig(pygame.K_w, pygame.K_s, initial_x=30, initial_y=SCREEN_HEIGHT // 2 - 60)
 paddle_left = Paddle(config=config_left)
@@ -105,6 +121,21 @@ running = True
 while running:
     # fill screen with BLACK
     screen.fill(BLACK)
+
+    if ball.rect.x < 0:
+        score_right += 1
+        ball.reset()
+        paddle_left.reset()
+        paddle_right.reset()
+        
+    if ball.rect.right > SCREEN_WIDTH:
+        score_left += 1
+        ball.reset()
+        paddle_left.reset()
+        paddle_right.reset()
+
+    score_text = font.render(f"Left score: {score_left}  |  Right score: {score_right}", True, WHITE)
+    screen.blit(score_text, (SCREEN_WIDTH / 2 - score_text.get_rect().width / 2, 10))
 
     # user input
     paddle_left.move()
