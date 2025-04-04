@@ -1,8 +1,5 @@
 import pygame
-
-# https://realpython.com/pygame-a-primer/#collision-detection
-# https://www.youtube.com/watch?v=tS8F7_X2qB0
-# https://gamedev.stackexchange.com/questions/4253/in-pong-how-do-you-calculate-the-balls-direction-when-it-bounces-off-the-paddl
+from math import pi, sin, cos
 
 # init
 SCREEN_WIDTH, SCREEN_HEIGHT = 1027, 768
@@ -61,7 +58,7 @@ class Ball(pygame.sprite.Sprite):
         self.width = 20
         self.height = 20
         self.radius = self.width / 2
-        self.SPEED = 8
+        self.SPEED = 12
         self.speed_x = self.SPEED
         self.speed_y = self.SPEED
         self.surface = pygame.surface.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -74,8 +71,19 @@ class Ball(pygame.sprite.Sprite):
             self.speed_x = self.speed_x * -1
         if self.rect.y < 0 or self.rect.bottom > SCREEN_HEIGHT:
             self.speed_y = self.speed_y * -1
-        if pygame.sprite.spritecollideany(self, paddles):
-            self.speed_x = self.speed_x * -1
+        
+        # hitting the paddle
+        paddle: Paddle = pygame.sprite.spritecollideany(self, paddles)
+        # the angle of the bounce when hitting the paddle is decided how far the center of the ball from the center of the paddle
+        # if the ball is hit by the top or bottom edge of the paddle, the ball will bounce with a 75 degree angle
+        # if the ball is hit by the very center of the paddle, the ball with go a straight line towards the opponent
+        # the x and y speed are calculated with basic trigonometry
+        if paddle:
+            ratio = abs(self.rect.centery - paddle.rect.centery) / (paddle.config.height / 2)
+            ratio = 1 if ratio > 1 else ratio
+            radian = 75 * ratio * pi / 180
+            self.speed_x = cos(radian) * self.SPEED * -1 if self.speed_x > 0 else cos(radian) * self.SPEED
+            self.speed_y = sin(radian) * self.SPEED * -1 if self.speed_y < 0 else sin(radian) * self.SPEED
         self.rect.move_ip(self.speed_x, self.speed_y)
         
 config_left = PaddleConfig(pygame.K_w, pygame.K_s, initial_x=30, initial_y=SCREEN_HEIGHT // 2 - 60)
@@ -120,3 +128,7 @@ while running:
     clock.tick(FPS)
 
 pygame.quit()
+
+# references:
+# https://realpython.com/pygame-a-primer/#collision-detection
+# https://gamedev.stackexchange.com/questions/4253/in-pong-how-do-you-calculate-the-balls-direction-when-it-bounces-off-the-paddl
